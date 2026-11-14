@@ -1,0 +1,4 @@
+ticker,name,market,quantity,avg_cost,cost_currency,purchase_date
+7203,サンプル自動車,JP,10,3000,JPY,2026-09-01
+9984,サンプル通信,JP,2,9000,JPY,2026-09-15
+AAPL,Sample Tech,US,0.5,30000,JPY,2026-10-01

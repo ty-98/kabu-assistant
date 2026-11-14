@@ -1,0 +1,40 @@
+# 投資ルール設定。数値は記入例であり推奨値ではない。本人が決めて書き換える。
+# 最初に有効にするのは3つまで (要件定義書の方針)。
+
+settings:
+  base_currency: JPY
+  # 取得した終値の日付が実行日からこの日数より古ければ「取得失敗」として判定しない
+  stale_price_days: 5
+  # PayPay証券のスプレッド (片道)。着手前に公式ページで再確認すること
+  spread:
+    JP:
+      regular: 0.005
+      off_hours: 0.010
+    US:
+      regular: 0.005
+      off_hours: 0.007
+
+rules:
+  # 1銘柄の上限比率: 総額に占める比率が max_weight を超えたら通知
+  concentration:
+    enabled: true
+    max_weight: 0.20
+
+  # 取得単価からの下落: 損益率が threshold 以下になったら通知 (自動では売らない)
+  drawdown_from_cost:
+    enabled: true
+    threshold: -0.15
+
+  # 1日の急変: 前日比の絶対値が threshold 以上なら通知
+  daily_move:
+    enabled: true
+    threshold: 0.07
+
+  # 売買回数: 当月の売買が max_per_month を超えたら通知
+  trade_count:
+    enabled: false
+    max_per_month: 4
+
+  # 取引時間: 立会時間外の約定を記録したら通知
+  off_hours_trade:
+    enabled: false

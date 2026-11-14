@@ -1,0 +1,41 @@
+name: daily-check
+
+on:
+  schedule:
+    # 平日 16:40 JST (07:40 UTC)。東証の終値確定後。米国株は前夜の終値を使う
+    - cron: "40 7 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-check
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+      - name: 日次点検
+        run: python scripts/run_daily.py
+      - name: 結果をコミット
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/
+          git diff --cached --quiet || git commit -m "daily report $(TZ=Asia/Tokyo date +%F)"
+          git push
+      - name: 取得失敗ならジョブを失敗にする
+        run: |
+          status=$(python -c "import json;print(json.load(open('reports/latest.json'))['status'])")
+          echo "status=$status"
+          test "$status" != "failed"

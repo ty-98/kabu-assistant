@@ -1,0 +1,7 @@
+date,time,ticker,market,side,quantity,price,amount_jpy,session,reason,expectation
+2026-11-02,10:15,7203,JP,buy,2,2900,5800,regular,決算が想定より良かった,1年保有
+2026-11-04,19:30,9984,JP,buy,1,8800,8800,off_hours,下がったので買い増し,半年で戻る
+2026-11-05,23:40,AAPL,US,buy,0.1,35000,3500,regular,新製品,長期
+2026-11-10,09:05,7203,JP,sell,1,2600,2600,regular,比率調整,なし
+2026-11-12,13:00,9984,JP,buy,1,7500,7500,regular,買い増し,半年で戻る
+2026-10-20,10:00,7203,JP,buy,1,3000,3000,regular,先月分,なし

@@ -1,0 +1,6 @@
+{
+  "7203.T":   {"close": 2500.0, "prev_close": 2700.0, "price_date": "2026-11-13"},
+  "9984.T":   {"close": 7600.0, "prev_close": 7500.0, "price_date": "2026-11-13"},
+  "AAPL":     {"close": 240.0,  "prev_close": 238.0,  "price_date": "2026-11-12"},
+  "USDJPY=X": {"close": 150.0,  "prev_close": 149.5,  "price_date": "2026-11-13"}
+}
