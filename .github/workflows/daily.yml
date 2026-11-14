@@ -25,6 +25,16 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: pytest -q
+      - name: 価格取得の疎通確認 (手動実行時のみ)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          python - <<'PY'
+          import sys
+          sys.path.insert(0, "scripts")
+          from kabu.prices import YahooChartProvider
+          for s in ("7203.T", "AAPL", "USDJPY=X"):
+              print(YahooChartProvider().get_quote(s))
+          PY
       - name: 日次点検
         run: python scripts/run_daily.py
       - name: 結果をコミット
