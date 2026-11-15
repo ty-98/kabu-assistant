@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -10,6 +11,7 @@ MARKETS = ("JP", "US")
 CURRENCIES = ("JPY", "USD")
 SIDES = ("buy", "sell")
 SESSIONS = ("regular", "off_hours")
+TICKER_RE = re.compile(r"[A-Za-z0-9.\-]{1,12}")
 
 
 class LedgerError(ValueError):
@@ -89,13 +91,22 @@ def _date(value: str, field: str, where: str) -> date:
 
 
 def load_holdings(path: Path) -> list[Holding]:
+    return parse_holdings(_rows(path), path.name)
+
+
+def parse_holdings(rows: list[tuple[int, dict[str, str]]], source: str) -> list[Holding]:
+    """(行番号, {列名: 値}) の並びから保有を作る。CSVとWeb入力で共通の検証。"""
     holdings: list[Holding] = []
     seen: set[str] = set()
-    for line, r in _rows(path):
-        where = f"{path.name}:{line}"
+    for line, raw in rows:
+        r = {k: str(v if v is not None else "").strip() for k, v in raw.items()}
+        where = f"{source}:{line}"
         ticker = r.get("ticker", "")
         if not ticker:
             raise LedgerError(f"{where}: ticker が空")
+        if not TICKER_RE.fullmatch(ticker):
+            raise LedgerError(f"{where}: ticker は英数字・ピリオド・ハイフン12文字以内: {ticker!r}")
+        ticker = ticker.upper()
         if ticker in seen:
             raise LedgerError(f"{where}: ticker が重複: {ticker} (1銘柄1行にまとめる)")
         seen.add(ticker)

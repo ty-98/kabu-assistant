@@ -1,0 +1,6 @@
+# 保有台帳と日次レポートはVercelに上げない (公開URLから見えないようにする)
+data/
+reports/
+tests/
+docs/
+*.tar.gz

@@ -23,6 +23,8 @@
 - `scripts/run_daily.py`: 日次点検の入口
 - `reports/daily/YYYY-MM-DD.json`、`reports/latest.json`: 判定結果。GitHub Actionsが平日16:40 JSTに書く
 - `knowledge/*.md`: 知識カード (フェーズ2)
+- `public/index.html` + `api/check.py`: Vercelで動くWeb画面。保有を入力し、実際の終値で評価・点検する。保有はブラウザのlocalStorageだけに保存し、サーバーに残さない。2026-11-15 に本人の依頼でフェーズ規則より先に追加
+- `.vercelignore`: `data/` と `reports/` をVercelに上げない。外さないこと
 
 ## コマンド
 

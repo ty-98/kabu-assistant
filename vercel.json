@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": "public",
+  "functions": {
+    "api/check.py": {
+      "includeFiles": "{scripts/kabu/**,config/rules.yaml}",
+      "maxDuration": 30
+    }
+  },
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- public api scripts config vercel.json requirements.txt"
+}

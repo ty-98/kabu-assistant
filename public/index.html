@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>保有ルール点検</title>
+<style>
+:root {
+  --bg: #f6f7f9; --surface: #ffffff; --text: #1b1f24; --muted: #5c6670;
+  --border: #dfe3e8; --accent: #2457c5; --accent-text: #ffffff;
+  --up: #1a7f37; --down: #c62828; --warn-bg: #fff4e5; --warn-border: #f0b45b;
+  --err-bg: #fdecec; --err-border: #e5a0a0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1216; --surface: #171b21; --text: #e6e9ed; --muted: #9aa4ae;
+    --border: #2c333c; --accent: #6f9bff; --accent-text: #0f1216;
+    --up: #4cc46a; --down: #ff7a7a; --warn-bg: #2b2211; --warn-border: #8a6420;
+    --err-bg: #2e1616; --err-border: #8a3a3a;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+}
+main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 16px; margin: 0 0 12px; }
+p.lead { margin: 0 0 20px; color: var(--muted); }
+section {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; }
+th, td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+input, select {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: 6px; padding: 4px 6px; width: 100%;
+}
+input.ticker { width: 90px; } input[data-k="name"] { min-width: 150px; } input.qty, input.cost { width: 100px; text-align: right; }
+select { width: auto; }
+button {
+  font: inherit; border-radius: 6px; padding: 6px 12px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+button:disabled { opacity: .6; cursor: default; }
+button.del { padding: 2px 8px; color: var(--muted); }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.rules { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.rules label { display: flex; gap: 8px; align-items: center; }
+.rules input[type=number] { width: 80px; text-align: right; }
+.rules input[type=checkbox] { width: auto; }
+.cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 16px; }
+.card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+.card .label { font-size: 12px; color: var(--muted); }
+.card .value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.up { color: var(--up); } .down { color: var(--down); }
+ul.alerts { list-style: none; padding: 0; margin: 0 0 16px; }
+ul.alerts li { background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
+.ok { color: var(--muted); margin: 0 0 16px; }
+.error { background: var(--err-bg); border: 1px solid var(--err-border); border-radius: 8px; padding: 8px 12px; }
+.error ul { margin: 4px 0 0; padding-left: 20px; }
+.meta { font-size: 12px; color: var(--muted); margin-top: 8px; }
+footer { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>保有ルール点検</h1>
+  <p class="lead">保有を入れて「点検する」を押すと、直近の終値で評価額を計算し、決めたルールに触れていないかを判定します。売買の指示は出しません。</p>
+
+  <section>
+    <h2>保有</h2>
+    <div class="scroll">
+      <table>
+        <thead><tr>
+          <th>コード</th><th>銘柄名</th><th>市場</th>
+          <th class="num">数量</th><th class="num">取得単価</th><th>単価の通貨</th><th></th>
+        </tr></thead>
+        <tbody id="holdings"></tbody>
+      </table>
+    </div>
+    <div class="row">
+      <button type="button" id="add">行を追加</button>
+      <button type="button" id="sample">サンプルを入れる</button>
+      <button type="button" id="clear">全部消す</button>
+    </div>
+    <p class="meta">国内株は4桁コード（例: 7203）、米国株はティッカー（例: AAPL）。取得単価は1株あたり。入力はこのブラウザにだけ保存され、サーバーには残りません。</p>
+  </section>
+
+  <section>
+    <h2>ルール</h2>
+    <div class="rules">
+      <label><input type="checkbox" id="r-conc"> 1銘柄の比率が <input type="number" id="r-conc-v" step="1" min="1" max="100"> % を超えたら</label>
+      <label><input type="checkbox" id="r-dd"> 取得単価から <input type="number" id="r-dd-v" step="1" min="-95" max="-1"> % 以下になったら</label>
+      <label><input type="checkbox" id="r-move"> 前日比が ± <input type="number" id="r-move-v" step="1" min="1" max="50"> % 以上動いたら</label>
+    </div>
+    <p class="meta">初期値は記入例で、推奨値ではありません。</p>
+    <div class="row"><button type="button" class="primary" id="run">点検する</button><span id="busy" class="meta"></span></div>
+  </section>
+
+  <section id="result" hidden></section>
+
+  <footer>投資助言ではありません。株価は無料の非公式データ源から取得しており、遅延や欠損があり得ます。</footer>
+</main>
+
+<script>
+const STORE_KEY = "kabu-assistant:v1";
+const DEFAULT_RULES = { conc: [true, 20], dd: [true, -15], move: [true, 7] };
+const SAMPLE = [
+  { ticker: "7203", name: "トヨタ自動車", market: "JP", quantity: 100, avg_cost: 2900, cost_currency: "JPY" },
+  { ticker: "9984", name: "ソフトバンクグループ", market: "JP", quantity: 10, avg_cost: 9000, cost_currency: "JPY" },
+  { ticker: "AAPL", name: "Apple", market: "US", quantity: 5, avg_cost: 200, cost_currency: "USD" },
+];
+
+const $ = (id) => document.getElementById(id);
+const tbody = $("holdings");
+const yen = (n) => Math.round(n).toLocaleString("ja-JP") + "円";
+const signedYen = (n) => (n >= 0 ? "+" : "−") + Math.abs(Math.round(n)).toLocaleString("ja-JP") + "円";
+const pct = (x, signed) => (signed && x >= 0 ? "+" : "") + (x * 100).toFixed(1) + "%";
+const cls = (x) => (x > 0 ? "up" : x < 0 ? "down" : "");
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY)) || null; } catch { return null; }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify({ holdings: readHoldings(), rules: readRules() })); } catch {}
+}
+
+function addRow(h = {}) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input class="ticker" data-k="ticker" placeholder="7203"></td>
+    <td><input data-k="name" placeholder="任意"></td>
+    <td><select data-k="market"><option value="JP">国内</option><option value="US">米国</option></select></td>
+    <td><input class="qty" data-k="quantity" inputmode="decimal"></td>
+    <td><input class="cost" data-k="avg_cost" inputmode="decimal"></td>
+    <td><select data-k="cost_currency"><option value="JPY">円</option><option value="USD">ドル</option></select></td>
+    <td><button type="button" class="del" aria-label="この行を削除">×</button></td>`;
+  for (const el of tr.querySelectorAll("[data-k]")) {
+    if (h[el.dataset.k] !== undefined) el.value = h[el.dataset.k];
+    el.addEventListener("change", save);
+  }
+  // 市場を米国にしたら通貨の既定もドルにする
+  tr.querySelector('[data-k="market"]').addEventListener("change", (e) => {
+    tr.querySelector('[data-k="cost_currency"]').value = e.target.value === "US" ? "USD" : "JPY";
+    save();
+  });
+  tr.querySelector(".del").addEventListener("click", () => { tr.remove(); save(); });
+  tbody.appendChild(tr);
+}
+
+function readHoldings() {
+  return [...tbody.querySelectorAll("tr")]
+    .map((tr) => Object.fromEntries([...tr.querySelectorAll("[data-k]")].map((el) => [el.dataset.k, el.value.trim()])))
+    .filter((h) => h.ticker || h.quantity || h.avg_cost);
+}
+
+function setRules(r) {
+  $("r-conc").checked = r.conc[0]; $("r-conc-v").value = r.conc[1];
+  $("r-dd").checked = r.dd[0]; $("r-dd-v").value = r.dd[1];
+  $("r-move").checked = r.move[0]; $("r-move-v").value = r.move[1];
+}
+function readRules() {
+  return {
+    conc: [$("r-conc").checked, Number($("r-conc-v").value)],
+    dd: [$("r-dd").checked, Number($("r-dd-v").value)],
+    move: [$("r-move").checked, Number($("r-move-v").value)],
+  };
+}
+function rulesPayload(r) {
+  return {
+    concentration: { enabled: r.conc[0], max_weight: r.conc[1] / 100 },
+    drawdown_from_cost: { enabled: r.dd[0], threshold: r.dd[1] / 100 },
+    daily_move: { enabled: r.move[0], threshold: r.move[1] / 100 },
+  };
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function render(rep) {
+  const box = $("result");
+  box.hidden = false;
+  if (rep.status !== "ok") {
+    box.innerHTML = `<h2>点検結果</h2><div class="error">${{ failed: "株価を取得できなかったため、今回は判定していません。", invalid: "入力を確認してください。", network: "点検できませんでした。" }[rep.status] || "保有がありません。"}
+      <ul>${rep.errors.map((e) => `<li>${esc(e)}</li>`).join("")}</ul></div>`;
+    return;
+  }
+  const t = rep.totals;
+  const alerts = rep.alerts.length
+    ? `<ul class="alerts">${rep.alerts.map((a) => `<li>${esc(a.message)}</li>`).join("")}</ul>`
+    : `<p class="ok">ルールに触れた銘柄はありません。</p>`;
+  const rows = rep.positions.map((p) => `<tr>
+      <td>${esc(p.name)} <span class="meta">${esc(p.ticker)}</span></td>
+      <td class="num">${p.close.toLocaleString("ja-JP", { maximumFractionDigits: 2 })}${p.market === "US" ? " $" : ""}</td>
+      <td class="num ${cls(p.day_change_pct)}">${pct(p.day_change_pct, true)}</td>
+      <td class="num">${yen(p.value_jpy)}</td>
+      <td class="num ${cls(p.pnl_pct)}">${pct(p.pnl_pct, true)}</td>
+      <td class="num">${pct(p.weight)}</td>
+      <td class="meta">${esc(p.price_date)}</td></tr>`).join("");
+  box.innerHTML = `<h2>点検結果</h2>
+    <div class="cards">
+      <div class="card"><div class="label">評価額</div><div class="value">${yen(t.value_jpy)}</div></div>
+      <div class="card"><div class="label">前日比</div><div class="value ${cls(t.day_change_jpy)}">${signedYen(t.day_change_jpy)}</div><div class="meta">${pct(t.day_change_pct, true)}</div></div>
+      <div class="card"><div class="label">含み損益</div><div class="value ${cls(t.pnl_jpy)}">${signedYen(t.pnl_jpy)}</div><div class="meta">${pct(t.pnl_pct, true)}</div></div>
+    </div>
+    <h2>ルール抵触 ${rep.alerts.length}件</h2>${alerts}
+    <div class="scroll"><table>
+      <thead><tr><th>銘柄</th><th class="num">終値</th><th class="num">前日比</th><th class="num">評価額</th><th class="num">損益率</th><th class="num">比率</th><th>終値の日付</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="meta">${rep.fx ? `USD/JPY ${rep.fx.USDJPY.toFixed(2)}（${esc(rep.fx.price_date)}）。` : ""}点検時刻 ${esc(rep.generated_at)}</p>`;
+}
+
+async function run() {
+  const holdings = readHoldings();
+  if (!holdings.length) { render({ status: "invalid", errors: ["保有を1銘柄以上入れてください"] }); return; }
+  save();
+  $("run").disabled = true; $("busy").textContent = "株価を取得中…";
+  try {
+    const res = await fetch("/api/check", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ holdings, rules: rulesPayload(readRules()) }),
+    });
+    const body = await res.json().catch(() => ({ error: `サーバーの応答を読めない (HTTP ${res.status})` }));
+    if (res.status === 400) render({ status: "invalid", errors: [body.error] });
+    else if (!res.ok) render({ status: "network", errors: [body.error || `HTTP ${res.status}`] });
+    else render(body);
+  } catch (e) {
+    render({ status: "network", errors: ["通信に失敗: " + e.message] });
+  } finally {
+    $("run").disabled = false; $("busy").textContent = "";
+  }
+}
+
+const saved = load();
+(saved?.holdings?.length ? saved.holdings : [{}]).forEach(addRow);
+setRules(saved?.rules || DEFAULT_RULES);
+for (const id of ["r-conc", "r-conc-v", "r-dd", "r-dd-v", "r-move", "r-move-v"]) $(id).addEventListener("change", save);
+$("add").addEventListener("click", () => addRow());
+$("sample").addEventListener("click", () => { tbody.innerHTML = ""; SAMPLE.forEach(addRow); save(); });
+$("clear").addEventListener("click", () => { tbody.innerHTML = ""; addRow(); save(); });
+$("run").addEventListener("click", run);
+</script>
+</body>
+</html>

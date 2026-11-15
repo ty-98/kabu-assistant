@@ -9,6 +9,16 @@
 3. 結果を `reports/daily/YYYY-MM-DD.json` と `reports/latest.json` にコミット
 4. Claude のスケジュールタスクが `reports/latest.json` を読み、新規のルール抵触だけ通知
 
+## Web画面 (Vercel)
+
+`public/index.html` と `api/check.py`。保有を入れて「点検する」を押すと、実際の終値で評価とルール点検をする。保有はブラウザ内だけに保存。
+
+ローカル確認 (価格はテスト用の値):
+
+```bash
+KABU_PRICES_FILE=tests/fixtures/prices.json python3 -c "from http.server import HTTPServer; import importlib.util as u; s=u.spec_from_file_location('c','api/check.py'); m=u.module_from_spec(s); s.loader.exec_module(m); HTTPServer(('127.0.0.1',8765),m.handler).serve_forever()"
+```
+
 ## ルール
 
 | ルール | キー | 初期状態 |
