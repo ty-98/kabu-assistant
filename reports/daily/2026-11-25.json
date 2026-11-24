@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-25",
+  "generated_at": "2026-11-25T04:05:23+09:00",
+  "price_source": "yahoo_chart",
+  "status": "empty",
+  "errors": [
+    "保有台帳 (data/holdings.csv) が空"
+  ],
+  "totals": null,
+  "fx": null,
+  "positions": [],
+  "alerts": [],
+  "summary_text": "【2026-11-25 日次点検】\n保有台帳が空\n- 保有台帳 (data/holdings.csv) が空"
+}
